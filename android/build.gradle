@@ -19,7 +19,7 @@ apply plugin: 'com.github.dcendents.android-maven'
 apply from: '../quality_tools/lint.gradle'
 
 //noinspection GroovyUnusedAssignment
-group = 'com.github.andrzejchm'
+group = 'com.github.andrzejchm.RESTMock'
 
 android {
     compileSdkVersion rootProject.ext.compileSdk
