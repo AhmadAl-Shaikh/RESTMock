@@ -210,15 +210,16 @@ public class RequestsVerifier {
 
     /**
      * @param requestMatcher matcher used to find all relevant requests
-     * @return a list of responses served by RESTMockServer, that match the given {@code requestMatcher} (from oldest to newest).
+     * @return a list of pairs responses served by RESTMockServer,
+     * that match the given {@code requestMatcher} (from oldest to newest).
      */
-    public static List<MockResponse> takeAllMatchingResponses(
+    public static List<Pair<RecordedRequest, MockResponse>> takeAllMatchingPairs(
             Matcher<RecordedRequest> requestMatcher
     ) {
-        List<MockResponse> result = new LinkedList<>();
+        List<Pair<RecordedRequest, MockResponse>> result = new LinkedList<>();
         for (Pair<RecordedRequest, MockResponse> pair : dispatcher.getRequestResponseHistory()) {
             if (requestMatcher.matches(pair.getFirst())) {
-                result.add(pair.getSecond());
+                result.add(pair);
             }
         }
         return result;

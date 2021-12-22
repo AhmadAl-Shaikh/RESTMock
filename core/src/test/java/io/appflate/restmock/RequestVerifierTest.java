@@ -16,6 +16,17 @@
 
 package io.appflate.restmock;
 
+import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertNull;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static io.appflate.restmock.RequestsVerifier.verifyDELETE;
+import static io.appflate.restmock.RequestsVerifier.verifyGET;
+import static io.appflate.restmock.RequestsVerifier.verifyPOST;
+import static io.appflate.restmock.RequestsVerifier.verifyPUT;
+import static io.appflate.restmock.RequestsVerifier.verifyRequest;
+import static io.appflate.restmock.utils.RequestMatchers.pathEndsWith;
+
 import org.hamcrest.Matcher;
 import org.junit.After;
 import org.junit.Before;
@@ -35,18 +46,9 @@ import io.appflate.restmock.exceptions.RequestInvocationCountNotEnoughException;
 import io.appflate.restmock.exceptions.RequestNotInvokedException;
 import io.appflate.restmock.utils.RequestMatchers;
 import io.appflate.restmock.utils.TestUtils;
+import kotlin.Pair;
+import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.RecordedRequest;
-
-import static io.appflate.restmock.RequestsVerifier.verifyDELETE;
-import static io.appflate.restmock.RequestsVerifier.verifyGET;
-import static io.appflate.restmock.RequestsVerifier.verifyPOST;
-import static io.appflate.restmock.RequestsVerifier.verifyPUT;
-import static io.appflate.restmock.RequestsVerifier.verifyRequest;
-import static io.appflate.restmock.utils.RequestMatchers.pathEndsWith;
-import static junit.framework.TestCase.assertEquals;
-import static junit.framework.TestCase.assertNull;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
 
 /**
  * Created by andrzejchm on 26/04/16.
@@ -235,6 +237,43 @@ public class RequestVerifierTest {
         assertEquals("GET", Objects.requireNonNull(recordedRequests.get(0).getMethod()).toUpperCase(Locale.US));
         assertEquals("GET", Objects.requireNonNull(recordedRequests.get(1).getMethod()).toUpperCase(Locale.US));
         assertEquals("GET", Objects.requireNonNull(recordedRequests.get(2).getMethod()).toUpperCase(Locale.US));
+    }
+
+    @Test
+    public void takeMatchingFindsAllRelevantRequestPairs() throws Exception {
+        String payload1 = "a single call1";
+        String payload2 = "a single call2";
+        String payload3 = "a single call3";
+
+        RESTMockServer.whenRequested(pathEndsWith(path))
+                .thenReturnString(payload1, payload2, payload3);
+
+        TestUtils.get(path); // this will get payload1, because it's first in a row
+        TestUtils.post(path); // this will get payload2, because it's 2nd in a row
+        TestUtils.delete(path); // this will get payload 3
+        TestUtils.get(path); // this will also get payload 3, by design of serving mocks
+        TestUtils.head(path); // this will also get payload 3, see above
+        TestUtils.get(path); // this will also get payload 3, see above
+
+        List<Pair<RecordedRequest, MockResponse>> recordedPairs = RequestsVerifier
+                .takeAllMatchingPairs(RequestMatchers.isGET());
+
+        assertEquals(3, recordedPairs.size());
+
+        assertEquals("GET", Objects.requireNonNull(recordedPairs.get(0).getFirst()
+                .getMethod()).toUpperCase(Locale.US));
+        assertEquals(payload1, Objects.requireNonNull(recordedPairs.get(0).getSecond()
+                .getBody()).readUtf8());
+
+        assertEquals("GET", Objects.requireNonNull(recordedPairs.get(1).getFirst()
+                .getMethod()).toUpperCase(Locale.US));
+        assertEquals(payload3, Objects.requireNonNull(recordedPairs.get(1).getSecond()
+                .getBody()).readUtf8());
+
+        assertEquals("GET", Objects.requireNonNull(recordedPairs.get(2).getFirst()
+                .getMethod()).toUpperCase(Locale.US));
+        assertEquals(payload3, Objects.requireNonNull(recordedPairs.get(2).getSecond()
+                .getBody()).readUtf8());
     }
 
     @Test(expected = IllegalArgumentException.class)
