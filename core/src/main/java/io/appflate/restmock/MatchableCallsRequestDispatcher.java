@@ -22,6 +22,8 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+
+import kotlin.Pair;
 import okhttp3.mockwebserver.Dispatcher;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.RecordedRequest;
@@ -30,6 +32,10 @@ class MatchableCallsRequestDispatcher extends Dispatcher {
 
     private List<MatchableCall> matchableCalls;
     private List<RecordedRequest> requestsHistory = new CopyOnWriteArrayList<>();
+
+    // Traded RAM for less hassle with transformations
+    private List<Pair<RecordedRequest, MockResponse>> requestResponseHistory =
+            new CopyOnWriteArrayList<>();
 
     public MatchableCallsRequestDispatcher() {
         matchableCalls = new CopyOnWriteArrayList<>();
@@ -40,13 +46,19 @@ class MatchableCallsRequestDispatcher extends Dispatcher {
         requestsHistory.add(recordedRequest);
         RESTMockServer.getLogger().log("-> New Request:\t" + recordedRequest);
         List<MatchableCall> matchedCalls = getMatchedRequests(recordedRequest);
+
+        MockResponse mockResponse;
         if (matchedCalls.size() == 1) {
-            return onOneResponseMatched(recordedRequest, matchedCalls);
+            mockResponse = onOneResponseMatched(recordedRequest, matchedCalls);
         } else if (matchedCalls.size() > 1) {
-            return onTooManyResponsesMatched(recordedRequest, matchedCalls);
+            mockResponse = onTooManyResponsesMatched(recordedRequest, matchedCalls);
         } else {
-            return onNoResponsesMatched(recordedRequest);
+            mockResponse = onNoResponsesMatched(recordedRequest);
         }
+
+        requestResponseHistory.add(new Pair<>(recordedRequest, mockResponse));
+
+        return mockResponse;
     }
 
     private MockResponse onOneResponseMatched(RecordedRequest recordedRequest, List<MatchableCall> matchedRequests) {
@@ -141,7 +153,12 @@ class MatchableCallsRequestDispatcher extends Dispatcher {
         return new ArrayList<>(requestsHistory);
     }
 
+    List<Pair<RecordedRequest, MockResponse>> getRequestResponseHistory() {
+        return new ArrayList<>(requestResponseHistory);
+    }
+
     void clearHistoricalRequests() {
         requestsHistory.clear();
+        requestResponseHistory.clear();
     }
 }

@@ -26,6 +26,8 @@ import io.appflate.restmock.exceptions.RequestInvocationCountMismatchException;
 import io.appflate.restmock.exceptions.RequestInvocationCountNotEnoughException;
 import io.appflate.restmock.exceptions.RequestNotInvokedException;
 import io.appflate.restmock.utils.RequestMatchers;
+import kotlin.Pair;
+import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.RecordedRequest;
 
 /**
@@ -201,6 +203,23 @@ public class RequestsVerifier {
         for (RecordedRequest recordedRequest : dispatcher.getRequestHistory()) {
             if (requestMatcher.matches(recordedRequest)) {
                 result.add(recordedRequest);
+            }
+        }
+        return result;
+    }
+
+    /**
+     * @param requestMatcher matcher used to find all relevant requests
+     * @return a list of pairs responses served by RESTMockServer,
+     * that match the given {@code requestMatcher} (from oldest to newest).
+     */
+    public static List<Pair<RecordedRequest, MockResponse>> takeAllMatchingPairs(
+            Matcher<RecordedRequest> requestMatcher
+    ) {
+        List<Pair<RecordedRequest, MockResponse>> result = new LinkedList<>();
+        for (Pair<RecordedRequest, MockResponse> pair : dispatcher.getRequestResponseHistory()) {
+            if (requestMatcher.matches(pair.getFirst())) {
+                result.add(pair);
             }
         }
         return result;

@@ -16,9 +16,27 @@
 
 apply plugin: "java"
 apply plugin: "maven"
+apply plugin: "maven-publish"
 
+group = "com.github.andrzejchm.RESTMock"
 
-group = "com.github.andrzejchm"
+publishing {
+    repositories {
+        maven {
+            name = "GitHubPackages"
+            url = uri("https://maven.pkg.github.com/oradkovsky/RESTMock")
+            credentials {
+                username = gprUser
+                password = gprKey
+            }
+        }
+    }
+    publications {
+        gpr(MavenPublication) {
+            from(components.java)
+        }
+    }
+}
 
 task sourcesJar(type: Jar, dependsOn: classes) {
     classifier = "sources"
