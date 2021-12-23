@@ -26,8 +26,11 @@ buildscript {
     }
 }
 
+Properties properties = new Properties()
+properties.load(project.rootProject.file('local.properties').newDataInputStream())
+
 ext {
-    libraryVersion = "0.4.4"
+    libraryVersion = "0.4.5-SNAPSHOT"
     compileSdk = 29
     targetSdk = 29
     minSdk = 21
@@ -38,6 +41,8 @@ ext {
     junitVersion = "4.13.2"
     androidXTestVersion = "1.4.0"
     daggerVersion = "2.27"
+    gprUser = properties.getProperty('gpr.user')
+    gprKey = properties.getProperty('gpr.key')
 }
 
 allprojects {
